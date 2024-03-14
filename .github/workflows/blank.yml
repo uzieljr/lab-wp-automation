@@ -18,11 +18,12 @@ jobs:
         id: commit_hash
 
       - name: Get commit file name
-        run: COMMIT_FILE=$(git diff-tree --no-commit-id --name-only -r $COMMIT_HASH | grep 'docker-compose.yml')
-        id: commit_file
+        run: |
+          COMMIT_FILE=$(git diff-tree --no-commit-id --name-only -r ${{ steps.commit_hash.outputs.COMMIT_HASH }} | grep 'docker-compose.yml' || echo "")
+          echo "COMMIT_FILE=$COMMIT_FILE" >> $GITHUB_ENV
 
       - name: Rename Docker Compose file
-        run: mv ${{ steps.commit_file.outputs.COMMIT_FILE }} $COMMIT_HASH-docker-compose.yml
+        run: mv $COMMIT_FILE $COMMIT_HASH-docker-compose.yml
 
       - name: SSH into Server and Deploy
         uses: appleboy/ssh-action@master
@@ -32,7 +33,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /var/www/composes/
+            cd /var/www/composes
             git pull origin main
             # Remove o arquivo docker-compose existente no servidor
             rm docker-compose.yml

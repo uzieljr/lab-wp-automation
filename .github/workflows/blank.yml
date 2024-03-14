@@ -2,8 +2,8 @@ name: Deploy Docker Compose
 
 on:
   push:
-    paths:
-      - '**/*docker-compose.yml' # Executar quando um arquivo de compose é adicionado ou atualizado
+    branches:
+      - main
 
 jobs:
   deploy:
@@ -13,16 +13,17 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v2
 
-      - name: SSH Setup
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-      
-      - name: Copy Docker Compose to Server
-        run: scp -o StrictHostKeyChecking=no docker-compose.yml ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:${{ secrets.REMOTE_PATH }}
-      
       - name: SSH into Server and Deploy
-        run: ssh -o StrictHostKeyChecking=no ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "cd ${{ secrets.REMOTE_PATH }} && docker-compose up -d"
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ${{ secrets.REMOTE_PATH }}
+            git pull origin main
+            docker-compose up -d
 
   manual-approval:
     needs: deploy

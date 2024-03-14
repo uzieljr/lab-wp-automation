@@ -6,10 +6,10 @@ services:
     image: mysql:5.7
     restart: always
     environment:
-      MYSQL_DATABASE: asdsd
-      MYSQL_USER: aa
-      MYSQL_PASSWORD: asdsd
-      MYSQL_ROOT_PASSWORD: asdsd
+      MYSQL_DATABASE: sss
+      MYSQL_USER: sss
+      MYSQL_PASSWORD: sss
+      MYSQL_ROOT_PASSWORD: sss
       TZ: America/Sao_Paulo
     volumes:
       - /var/www/wordpress/volumes/teste/mysql:/var/lib/mysql
@@ -18,12 +18,12 @@ services:
     image: wordpress
     restart: always
     ports:
-      - '48276:80'
+      - '13552:80'
     environment:
       WORDPRESS_DB_HOST: db
-      WORDPRESS_DB_USER: aa
-      WORDPRESS_DB_PASSWORD: asdsd
-      WORDPRESS_DB_NAME: asdsd
+      WORDPRESS_DB_USER: sss
+      WORDPRESS_DB_PASSWORD: sss
+      WORDPRESS_DB_NAME: sss
       TZ: America/Sao_Paulo
     volumes:
       - /var/www/wordpress/volumes/teste/html:/var/www/html
@@ -34,6 +34,6 @@ services:
     image: adminer
     restart: always
     ports:
-      - '48277:8080'
+      - '13553:8080'
     environment:
       TZ: America/Sao_Paulo

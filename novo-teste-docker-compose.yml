@@ -1,0 +1,39 @@
+
+version: '3.1'
+
+services:
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_DATABASE: sssss
+      MYSQL_USER: sssss
+      MYSQL_PASSWORD: sssss
+      MYSQL_ROOT_PASSWORD: sssss
+      TZ: America/Sao_Paulo
+    volumes:
+      - /var/www/wordpress/volumes/novo-teste/mysql:/var/lib/mysql
+
+  novo-teste:
+    image: wordpress
+    restart: always
+    ports:
+      - '25513:80'
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: sssss
+      WORDPRESS_DB_PASSWORD: sssss
+      WORDPRESS_DB_NAME: sssss
+      TZ: America/Sao_Paulo
+    volumes:
+      - /var/www/wordpress/volumes/novo-teste/html:/var/www/html
+    depends_on:
+      - db  
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - '25514:8080'
+    environment:
+      TZ: America/Sao_Paulo

@@ -21,7 +21,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ${{ secrets.REMOTE_PATH }}
+            cd /var/www/composes/
             git pull origin main
             docker-compose up -d
 

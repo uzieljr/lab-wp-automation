@@ -1,0 +1,39 @@
+
+version: '3.1'
+
+services:
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_DATABASE: asdsd
+      MYSQL_USER: asd
+      MYSQL_PASSWORD: asd
+      MYSQL_ROOT_PASSWORD: asd
+      TZ: America/Sao_Paulo
+    volumes:
+      - /var/www/wordpress/volumes/fulanodetall/mysql:/var/lib/mysql
+
+  fulanodetall:
+    image: wordpress
+    restart: always
+    ports:
+      - '21247:80'
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: asd
+      WORDPRESS_DB_PASSWORD: asd
+      WORDPRESS_DB_NAME: asdsd
+      TZ: America/Sao_Paulo
+    volumes:
+      - /var/www/wordpress/volumes/fulanodetall/html:/var/www/html
+    depends_on:
+      - db  
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - '21248:8080'
+    environment:
+      TZ: America/Sao_Paulo

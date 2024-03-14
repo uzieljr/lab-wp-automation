@@ -1,0 +1,39 @@
+
+version: '3.1'
+
+services:
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_DATABASE: aaa
+      MYSQL_USER: aaa
+      MYSQL_PASSWORD: aaa
+      MYSQL_ROOT_PASSWORD: aaa
+      TZ: America/Sao_Paulo
+    volumes:
+      - /var/www/wordpress/volumes/teste7/mysql:/var/lib/mysql
+
+  teste7:
+    image: wordpress
+    restart: always
+    ports:
+      - '18835:80'
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: aaa
+      WORDPRESS_DB_PASSWORD: aaa
+      WORDPRESS_DB_NAME: aaa
+      TZ: America/Sao_Paulo
+    volumes:
+      - /var/www/wordpress/volumes/teste7/html:/var/www/html
+    depends_on:
+      - db  
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - '18836:8080'
+    environment:
+      TZ: America/Sao_Paulo

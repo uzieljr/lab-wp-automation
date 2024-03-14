@@ -23,7 +23,10 @@ jobs:
           echo "COMMIT_FILE=$COMMIT_FILE" >> $GITHUB_ENV
 
       - name: Rename Docker Compose file
-        run: mv $COMMIT_FILE $COMMIT_HASH-docker-compose.yml
+        run: |
+          if [[ -n "$COMMIT_FILE" ]]; then
+            mv "$COMMIT_FILE" "$COMMIT_HASH-docker-compose.yml"
+          fi
 
       - name: SSH into Server and Deploy
         uses: appleboy/ssh-action@master

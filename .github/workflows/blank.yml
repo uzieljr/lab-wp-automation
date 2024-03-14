@@ -33,7 +33,7 @@ jobs:
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
-          port: ${{ secrets.SSH_PORT }}
+          port: 2224
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /var/www/composes

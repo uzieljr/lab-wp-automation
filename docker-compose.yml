@@ -6,27 +6,27 @@ services:
     image: mysql:5.7
     restart: always
     environment:
-      MYSQL_DATABASE: este
-      MYSQL_USER: teste
-      MYSQL_PASSWORD: teste
-      MYSQL_ROOT_PASSWORD: teste
+      MYSQL_DATABASE: sdfsdf
+      MYSQL_USER: terwer
+      MYSQL_PASSWORD: sdfsdf
+      MYSQL_ROOT_PASSWORD: sdfsdf
       TZ: America/Sao_Paulo
     volumes:
-      - /var/www/wordpress/volumes/777/mysql:/var/lib/mysql
+      - /var/www/wordpress/volumes/888/mysql:/var/lib/mysql
 
-  777:
+  888:
     image: wordpress
     restart: always
     ports:
-      - '21226:80'
+      - '16029:80'
     environment:
       WORDPRESS_DB_HOST: db
-      WORDPRESS_DB_USER: teste
-      WORDPRESS_DB_PASSWORD: teste
-      WORDPRESS_DB_NAME: este
+      WORDPRESS_DB_USER: terwer
+      WORDPRESS_DB_PASSWORD: sdfsdf
+      WORDPRESS_DB_NAME: sdfsdf
       TZ: America/Sao_Paulo
     volumes:
-      - /var/www/wordpress/volumes/777/html:/var/www/html
+      - /var/www/wordpress/volumes/888/html:/var/www/html
     depends_on:
       - db  
 
@@ -34,6 +34,6 @@ services:
     image: adminer
     restart: always
     ports:
-      - '21227:8080'
+      - '16030:8080'
     environment:
       TZ: America/Sao_Paulo

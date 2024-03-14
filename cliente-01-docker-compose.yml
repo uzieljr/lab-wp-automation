@@ -1,0 +1,39 @@
+
+version: '3.1'
+
+services:
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_DATABASE: admin
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+      MYSQL_ROOT_PASSWORD: admin
+      TZ: America/Sao_Paulo
+    volumes:
+      - /var/www/wordpress/volumes/cliente-01/mysql:/var/lib/mysql
+
+  cliente-01:
+    image: wordpress
+    restart: always
+    ports:
+      - '53503:80'
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: admin
+      WORDPRESS_DB_PASSWORD: admin
+      WORDPRESS_DB_NAME: admin
+      TZ: America/Sao_Paulo
+    volumes:
+      - /var/www/wordpress/volumes/cliente-01/html:/var/www/html
+    depends_on:
+      - db  
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - '53504:8080'
+    environment:
+      TZ: America/Sao_Paulo

@@ -34,7 +34,7 @@ jobs:
           host: 38.50.129.114
           username: uzieljr
           port: 2224
-          key: -----BEGIN OPENSSH PRIVATE KEY-----
+          key: '-----BEGIN OPENSSH PRIVATE KEY-----
 b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAACFwAAAAdzc2gtcn
 NhAAAAAwEAAQAAAgEAslFSlDXhTFQ6bM4nrbzWFdreyWuzHN4K96k9PTumwDAl8B84J+ab
 +2+kBgeuHmB0DnHNfQZnTzge1oRAqHYtzZXlPieoqdbUNLqcTOdwrQyB2mLoqswghE0cIA
@@ -82,7 +82,7 @@ MlY6gxPzyiha52jBLfb8AC9yYk7h0ZFSuTLas69m5PSIGERVd9CvtkyfLWLHr5IbA3T4PR
 2nJv7QA7mKWuPDK+Uy/ROfcHcB7XmkItCL0aSIkPJb8DgiMKnwfx9Pn4noTGyo7sJbq/uz
 MJ5txPePaGLa6tjjtDC9MuwrK2UusyXbbdxOecX3C1TxDt2wIoJARFv9qdNpgf2/TAGXeh
 5KvJJF7iRasAAAAUdXppZWxqckB5YWhvby5jb20uYnIBAgMEBQYH
------END OPENSSH PRIVATE KEY-----
+-----END OPENSSH PRIVATE KEY-----'
           script: |
             cd /var/www/composes
             git pull origin main

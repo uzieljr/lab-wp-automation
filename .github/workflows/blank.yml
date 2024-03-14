@@ -13,6 +13,17 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v2
 
+      - name: Get commit hash
+        run: COMMIT_HASH=$(git rev-parse HEAD)
+        id: commit_hash
+
+      - name: Get commit file name
+        run: COMMIT_FILE=$(git diff-tree --no-commit-id --name-only -r $COMMIT_HASH | grep 'docker-compose.yml')
+        id: commit_file
+
+      - name: Rename Docker Compose file
+        run: mv ${{ steps.commit_file.outputs.COMMIT_FILE }} $COMMIT_HASH-docker-compose.yml
+
       - name: SSH into Server and Deploy
         uses: appleboy/ssh-action@master
         with:
@@ -23,6 +34,11 @@ jobs:
           script: |
             cd /var/www/composes/
             git pull origin main
+            # Remove o arquivo docker-compose existente no servidor
+            rm docker-compose.yml
+            # Copia o docker-compose do diretório do repositório
+            cp /var/www/composes/${{ steps.commit_hash.outputs.COMMIT_HASH }}-docker-compose.yml docker-compose.yml
+            # Inicia o serviço Docker usando o docker-compose do repositório
             docker-compose up -d
 
   manual-approval:

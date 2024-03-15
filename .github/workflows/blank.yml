@@ -1,29 +1,52 @@
-name: Deploy to Remote Server
+name: Deploy Docker Compose
 
 on:
   push:
     branches:
-      - main  # ajuste de acordo com sua branch principal
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout código
         uses: actions/checkout@v2
 
-      - name: Install SSH key
-        uses: webfactory/ssh-agent@v0.5.3
+      - name: Get commit hash
+        run: COMMIT_HASH=$(git rev-parse HEAD)
+        id: commit_hash
+
+      - name: Get commit file name
+        run: |
+          COMMIT_FILE=$(git diff-tree --no-commit-id --name-only -r ${{ steps.commit_hash.outputs.COMMIT_HASH }} | grep 'docker-compose.yml' || echo "")
+          echo "COMMIT_FILE=$COMMIT_FILE" >> $GITHUB_ENV
+
+      - name: SSH into Server and Deploy
+        id: ssh_deploy
+        uses: appleboy/ssh-action@master
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{secrets.SERVER_IP}}
+          username: ${{secrets.SERVER_USER}}
+          port: ${{secrets.SSH_PORT}}
+          key: ${{secrets.SSH_PRIVATE_KEY}}
+          script: |
+            cd /var/www/composes
+            # Copia o docker-compose do diretório do repositório
+            cp /github/workspace/$COMMIT_FILE docker-compose.yml
+            # Inicia o serviço Docker usando o docker-compose do repositório
+            docker-compose up -d
 
-      - name: Find latest docker-compose file
-        run: |
-          latest_file=$(ls -t | grep 'docker-compose.*\.yml' | head -1)
-          echo "Latest docker-compose file: $latest_file"
-          scp -P ${{ secrets.SSH_PORT }} $latest_file ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/remote/path/to/destination
+  manual-approval:
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: always()
 
-      - name: SSH Deploy
-        run: |
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "cd /remote/path/to/destination && docker-compose -f $latest_file up -d"
+    steps:
+      - name: Manual Approval
+        uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          commit_message: Approve deployment
+          file_pattern: .*
+          commit_user_name: GitHub Actions
+          commit_user_email: actions@github.com

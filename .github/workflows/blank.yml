@@ -20,7 +20,8 @@ jobs:
       - name: Get commit file name
         run: |
           COMMIT_FILE=$(git diff-tree --no-commit-id --name-only -r ${{ steps.commit_hash.outputs.COMMIT_HASH }} | grep 'docker-compose.yml' || echo "")
-          echo "COMMIT_FILE=$COMMIT_FILE" >> $GITHUB_ENV
+          COMMIT_RASH=$(git log -1 --pretty=format:"%h")
+          echo "COMMIT_FILE=$COMMIT_RASH-docker-compose.yml" >> $GITHUB_ENV
 
       - name: SSH into Server and Deploy
         uses: appleboy/ssh-action@master

@@ -33,7 +33,12 @@ jobs:
           key: ${{secrets.SSH_PRIVATE_KEY}}
           script: |
             cd /var/www/composes
-            # Copy the latest docker-compose file from the repository directory
-            cp "$GITHUB_WORKSPACE/$COMMIT_FILE" docker-compose.yml
+            # Copy the latest docker-compose file from the repository directory if it exists
+            if [ -n "$COMMIT_FILE" ]; then
+              cp "$GITHUB_WORKSPACE/$COMMIT_FILE" docker-compose.yml
+            else
+              echo "No docker-compose file found in the latest commit."
+              exit 1
+            fi
             # Execute docker-compose up
             sudo docker-compose up -d

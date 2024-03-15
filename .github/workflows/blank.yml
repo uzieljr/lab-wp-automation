@@ -7,12 +7,9 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest  # Você pode alterar o sistema operacional aqui, se necessário
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
       - name: Copy Docker Compose file to remote server
         uses: appleboy/ssh-action@master
         with:
@@ -22,5 +19,5 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             mkdir -p /var/www/composes
-            git archive HEAD | tar -x -C /var/www/composes
-            mv /var/www/composes/up*-docker-compose.yml /var/www/composes/docker-compose.yml
+            cd /github/workspace
+            cp *-docker-compose.yml /var/www/composes/docker-compose.yml

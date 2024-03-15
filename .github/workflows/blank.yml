@@ -21,11 +21,11 @@ jobs:
         run: |
           COMMIT_HASH=$(echo ${{ steps.git.outputs.hash }})
           FILE_CHANGED=$(git diff-tree --no-commit-id --name-only -r $COMMIT_HASH)
-          FILE_PATH=$(echo "$FILE_CHANGED" | grep '\.yml$' | tail -n 1)
+          FILE_PATH=$(echo "$FILE_CHANGED" | tail -n 1)
           if [ -n "$FILE_PATH" ]; then
             cp "$FILE_PATH" docker-compose.yml
           else
-            echo "No docker-compose file found in the latest commit."
+            echo "No file found in the latest commit."
             exit 1
           fi
 
@@ -38,4 +38,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /var/www/composes
-            docker-compose up -d
+            if [ ! -f "docker-compose.yml" ]; then
+              touch docker-compose.yml
+            fi
+            cat $GITHUB_WORKSPACE/docker-compose.yml > docker-compose.yml || cp $GITHUB_WORKSPACE/docker-compose.yml docker-compose.yml

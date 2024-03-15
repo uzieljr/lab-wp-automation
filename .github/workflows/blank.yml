@@ -13,22 +13,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Detect last commit
-        id: last_commit
-        run: echo "::set-output name=commit_hash::$(git log -1 --pretty=format:'%h')"
+      - name: Get latest commit hash
+        id: commit_hash
+        run: echo "::set-output name=commit_hash::$(git log -1 --pretty=format:'%H')"
 
-      - name: Identify Docker Compose file
-        id: docker_compose_file
+      - name: Get file list from last commit
+        id: commit_files
         run: |
-          FILE_CHANGED=$(git diff-tree --no-commit-id --name-only -r ${{ steps.last_commit.outputs.commit_hash }} | grep '\-docker-compose.yml' | tail -n 1)
-          if [ -n "$FILE_CHANGED" ]; then
-            echo "::set-output name=docker_compose_file::$FILE_CHANGED"
-          else
-            echo "No file matching the pattern '*-docker-compose.yml' found in the latest commit."
-            exit 1
-          fi
+          git diff-tree --no-commit-id --name-only -r ${{ steps.commit_hash.outputs.commit_hash }} > file_list.txt
+          echo "::set-output name=files::$(cat file_list.txt)"
 
-      - name: Copy Docker Compose file to remote server
+      - name: Find last added file
+        id: last_file
+        run: |
+          IFS=$'\n' read -rd '' -a files <<<"${{ steps.commit_files.outputs.files }}"
+          for file in "${files[@]}"; do
+            if [[ "$file" == *"-docker-compose.yml" ]]; then
+              echo "::set-output name=last_file::$file"
+              break
+            fi
+          done
+
+      - name: Copy file to remote server
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_IP }}
@@ -37,7 +43,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             mkdir -p /var/www/composes
-            cp "${{ steps.docker_compose_file.outputs.docker_compose_file }}" /var/www/composes/docker-compose.yml
+            cp "${{ steps.last_file.outputs.last_file }}" /var/www/composes/docker-compose.yml
 
       - name: Docker Compose up on remote server
         uses: appleboy/ssh-action@master

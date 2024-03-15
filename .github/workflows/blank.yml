@@ -13,32 +13,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Get latest commit hash
-        id: commit_hash
-        run: echo "::set-output name=commit_hash::$(git log -1 --pretty=format:'%H')"
-
-      - name: Get list of changed files in last commit
-        id: changed_files
-        run: echo "::set-output name=files::$(git diff-tree --no-commit-id --name-only -r ${{ steps.commit_hash.outputs.commit_hash }})"
-
-      - name: Find last added file
-        id: last_file
-        run: |
-          files="${{ steps.changed_files.outputs.files }}"
-          if [[ -z "$files" ]]; then
-            echo "No files found in the latest commit."
-            exit 1
-          fi
-
-          IFS=$'\n' read -rd '' -a files_array <<<"$files"
-          last_file="${files_array[-1]}"
-          echo "::set-output name=last_file::$last_file"
-
-      - name: Display last file found
-        run: echo "Last file found: ${{ steps.last_file.outputs.last_file }}"
-
-      - name: Copy file to remote server
-        if: steps.last_file.outputs.last_file
+      - name: Copy Docker Compose file to remote server
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_IP }}
@@ -47,16 +22,5 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             mkdir -p /var/www/composes
-            cp "${{ steps.last_file.outputs.last_file }}" /var/www/composes/docker-compose.yml
-
-      - name: Docker Compose up on remote server
-        if: steps.last_file.outputs.last_file
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          script: |
-            cd /var/www/composes
-            docker-compose up -d
+            git archive HEAD | tar -x -C /var/www/composes
+            mv /var/www/composes/up*-docker-compose.yml /var/www/composes/docker-compose.yml

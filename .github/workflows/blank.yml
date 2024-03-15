@@ -7,38 +7,37 @@ on:
 
 jobs:
   deploy:
+    name: Deploy Docker Compose
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout código
+      - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Get latest commit
+      - name: Find latest YAML file
+        id: find_yaml
         run: |
-          git pull origin main
-          COMMIT_FILE=$(git log --diff-filter=A --name-only --pretty=format:'' | grep 'docker-compose.yml' | head -n 1)
-          echo "COMMIT_FILE=$COMMIT_FILE" >> $GITHUB_ENV
+          latest_yaml=$(ls -t | grep .yml | head -1)
+          echo "::set-output name=filename::${latest_yaml}"
 
-      - name: Install Docker Compose
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y docker-compose
-
-      - name: SSH into Server and Deploy
+      - name: Copy YAML file to server
         uses: appleboy/ssh-action@master
         with:
-          host: ${{secrets.SERVER_IP}}
-          username: ${{secrets.SERVER_USER}}
-          port: ${{secrets.SSH_PORT}}
-          key: ${{secrets.SSH_PRIVATE_KEY}}
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
           script: |
             cd /var/www/composes
-            # Copy the latest added docker-compose file from the repository directory if it exists
-            if [ -n "$COMMIT_FILE" ]; then
-              cp "$GITHUB_WORKSPACE/$COMMIT_FILE" docker-compose.yml
-            else
-              echo "No docker-compose file found in the latest commit."
-              exit 1
-            fi
-            # Execute docker-compose up
-            sudo docker-compose up -d
+            cp "${{ steps.find_yaml.outputs.filename }}" docker-compose.yml
+
+      - name: Run Docker Compose
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USERNAME }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          script: |
+            cd /var/www/composes
+            docker-compose up -d

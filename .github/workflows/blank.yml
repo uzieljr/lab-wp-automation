@@ -13,15 +13,11 @@ jobs:
       - name: Checkout código
         uses: actions/checkout@v2
 
-      - name: Get commit hash
-        run: COMMIT_HASH=$(git rev-parse HEAD)
-        id: commit_hash
-
-      - name: Get commit file name
+      - name: Get latest commit
         run: |
-          COMMIT_FILE=$(git diff-tree --no-commit-id --name-only -r ${{ steps.commit_hash.outputs.COMMIT_HASH }} | grep 'docker-compose.yml' || echo "")
-          COMMIT_RASH=$(git log -1 --pretty=format:"%h")
-          echo "COMMIT_FILE=$COMMIT_RASH-docker-compose.yml" >> $GITHUB_ENV
+          git pull origin main
+          COMMIT_FILE=$(git log -1 --name-only --pretty=format:'' | grep 'docker-compose.yml' | head -n 1)
+          echo "COMMIT_FILE=$COMMIT_FILE" >> $GITHUB_ENV
 
       - name: SSH into Server and Deploy
         uses: appleboy/ssh-action@master
@@ -32,5 +28,7 @@ jobs:
           key: ${{secrets.SSH_PRIVATE_KEY}}
           script: |
             cd /var/www/composes
-            # Copy the docker-compose file from the repository directory
+            # Copy the latest docker-compose file from the repository directory
             cp "$GITHUB_WORKSPACE/$COMMIT_FILE" docker-compose.yml
+            # Execute docker-compose up
+            docker-compose up -d

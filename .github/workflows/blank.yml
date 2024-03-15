@@ -19,5 +19,9 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             mkdir -p /var/www/composes
-            cd /github/workspace
-            cp *-docker-compose.yml /var/www/composes/docker-compose.yml
+            FILE=$(find . -name '*-docker-compose.yml' -type f -exec basename {} \;)
+            if [ -z "$FILE" ]; then
+              echo "No file matching the pattern '*-docker-compose.yml' found in the workspace."
+              exit 1
+            fi
+            cp "$FILE" /var/www/composes/docker-compose.yml

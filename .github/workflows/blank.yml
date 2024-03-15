@@ -1,39 +1,31 @@
-name: Deploy Docker Compose
+name: Deploy Último Arquivo
 
 on:
   push:
     branches:
-      - main
+      - main  # ajuste conforme sua branch principal
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout código
         uses: actions/checkout@v2
 
-      - name: Get latest commit hash
-        id: git
-        run: echo "::set-output name=hash::$(git log --format=%H -n 1)"
-
-      - name: Get latest modified file
-        id: get_file
-        run: |
-          FILE_CHANGED=$(git diff-tree --no-commit-id --name-only -r ${{ steps.git.outputs.hash }} | grep '\-docker-compose.yml' | tail -n 1)
-          if [ -n "$FILE_CHANGED" ]; then
-            cp "$FILE_CHANGED" docker-compose.yml
-          else
-            echo "No file matching the pattern '*-docker-compose.yml' found in the latest commit."
-            exit 1
-          fi
-
-      - name: Deploy Docker Compose
-        uses: appleboy/ssh-action@master
+      - name: Configurar SSH
+        uses: webfactory/ssh-agent@v0.5.3
         with:
-          host: ${{ secrets.SERVER_IP }}
-          username: ${{ secrets.SERVER_USER }}
-          port: ${{ secrets.SSH_PORT }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd /var/www/composes
-            cat $GITHUB_WORKSPACE/docker-compose.yml > docker-compose.yml || cp $GITHUB_WORKSPACE/docker-compose.yml docker-compose.yml
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Identificar último arquivo commitado
+        run: |
+          LAST_FILE=$(git diff-tree --no-commit-id --name-only -r HEAD | head -n 1)
+          echo "Último arquivo commitado: $LAST_FILE"
+
+      - name: Copiar Último Arquivo para o Servidor Remoto
+        run: scp -P ${{ secrets.SSH_PORT }} $LAST_FILE ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/var/www/composes/
+
+      - name: Executar docker-compose up -d no servidor remoto
+        run: |
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "cd /var/www/composes/ && docker-compose up -d"

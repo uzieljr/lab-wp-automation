@@ -1,64 +1,29 @@
-name: Deploy Docker Compose
+name: Deploy to Remote Server
 
 on:
   push:
     branches:
-      - main
+      - main  # ajuste de acordo com sua branch principal
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout código
+      - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Get commit hash
-        run: COMMIT_HASH=$(git rev-parse HEAD)
-        id: commit_hash
-
-      - name: Get commit file name
-        run: |
-          COMMIT_FILE=$(git diff-tree --no-commit-id --name-only -r ${{ steps.commit_hash.outputs.COMMIT_HASH }} | grep 'docker-compose.yml' || echo "")
-          echo "COMMIT_FILE=$COMMIT_FILE" >> $GITHUB_ENV
-
-      - name: Rename Docker Compose file
-        run: |
-          if [[ -n "$COMMIT_FILE" ]]; then
-            mv "$COMMIT_FILE" "$COMMIT_HASH-docker-compose.yml"
-          fi
-
-      - name: Clone repository if not exists
-        run: |
-          if [[ ! -d "/var/www/composes/.git" ]]; then
-            git clone https://github.com/uzieljr/lab-wp-automation.git /var/www/composes
-          fi
-
-      - name: Make directory valid
-        run: cd /var/www/composes
-
-      - name: Create Docker Compose file if not exists
-        run: |
-          if [[ ! -f "/var/www/composes/docker-compose.yml" ]]; then
-            echo "Creating docker-compose.yml with content of last commit..."
-            git show $(git log --format="%H" -n 1) | grep -vE '^(commit [0-9a-f]{40}|Author:|Date:)' > /var/www/composes/docker-compose.yml
-          fi
-
-      - name: SSH into Server and Deploy
-        uses: appleboy/ssh-action@master
+      - name: Install SSH key
+        uses: webfactory/ssh-agent@v0.5.3
         with:
-          host: ${{secrets.SERVER_IP}}
-          username: ${{secrets.SERVER_USER}}
-          port: ${{secrets.SSH_PORT}}
-          key: ${{secrets.SSH_PRIVATE_KEY}}
-          script: |
-            cd /var/www/composes
-            git pull origin main
-            # Remove o arquivo docker-compose existente no servidor, se existir
-            if [ -f "docker-compose.yml" ]; then
-              rm docker-compose.yml
-            fi
-            # Copia o docker-compose do diretório do repositório
-            cp /var/www/composes/${{ steps.commit_hash.outputs.COMMIT_HASH }}-docker-compose.yml docker-compose.yml
-            # Inicia o serviço Docker usando o docker-compose do repositório
-            docker-compose up -d
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Find latest docker-compose file
+        run: |
+          latest_file=$(ls -t | grep 'docker-compose.*\.yml' | head -1)
+          echo "Latest docker-compose file: $latest_file"
+          scp -P ${{ secrets.SSH_PORT }} $latest_file ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/remote/path/to/destination
+
+      - name: SSH Deploy
+        run: |
+          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "cd /remote/path/to/destination && docker-compose -f $latest_file up -d"

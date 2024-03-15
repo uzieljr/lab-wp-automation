@@ -17,24 +17,28 @@ jobs:
         id: commit_hash
         run: echo "::set-output name=commit_hash::$(git log -1 --pretty=format:'%H')"
 
-      - name: Get file list from last commit
-        id: commit_files
-        run: |
-          git diff-tree --no-commit-id --name-only -r ${{ steps.commit_hash.outputs.commit_hash }} > file_list.txt
-          echo "::set-output name=files::$(cat file_list.txt)"
+      - name: Get list of changed files in last commit
+        id: changed_files
+        run: echo "::set-output name=files::$(git diff-tree --no-commit-id --name-only -r ${{ steps.commit_hash.outputs.commit_hash }})"
 
       - name: Find last added file
         id: last_file
         run: |
-          IFS=$'\n' read -rd '' -a files <<<"${{ steps.commit_files.outputs.files }}"
-          for file in "${files[@]}"; do
-            if [[ "$file" == *"-docker-compose.yml" ]]; then
-              echo "::set-output name=last_file::$file"
-              break
-            fi
-          done
+          files="${{ steps.changed_files.outputs.files }}"
+          if [[ -z "$files" ]]; then
+            echo "No files found in the latest commit."
+            exit 1
+          fi
+
+          IFS=$'\n' read -rd '' -a files_array <<<"$files"
+          last_file="${files_array[-1]}"
+          echo "::set-output name=last_file::$last_file"
+
+      - name: Display last file found
+        run: echo "Last file found: ${{ steps.last_file.outputs.last_file }}"
 
       - name: Copy file to remote server
+        if: steps.last_file.outputs.last_file
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_IP }}
@@ -46,6 +50,7 @@ jobs:
             cp "${{ steps.last_file.outputs.last_file }}" /var/www/composes/docker-compose.yml
 
       - name: Docker Compose up on remote server
+        if: steps.last_file.outputs.last_file
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_IP }}

@@ -17,18 +17,13 @@ jobs:
         run: COMMIT_HASH=$(git rev-parse HEAD)
         id: commit_hash
 
-      - name: Get commit file name
+      - name: Get commit file content
         run: |
-          COMMIT_FILE=$(git diff-tree --no-commit-id --name-only -r ${{ steps.commit_hash.outputs.COMMIT_HASH }} | grep 'docker-compose.yml' || echo "")
-          echo "COMMIT_FILE=$COMMIT_FILE" >> $GITHUB_ENV
-
-      - name: Install Docker Compose
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y docker-compose
+          COMMIT_FILE="${{ steps.commit_hash.outputs.COMMIT_HASH }}-docker-compose.yml"
+          COMMIT_CONTENT="# Your Docker Compose configuration here"
+          echo "$COMMIT_CONTENT" > $GITHUB_WORKSPACE/docker-compose.yml
 
       - name: SSH into Server and Deploy
-        id: ssh_deploy
         uses: appleboy/ssh-action@master
         with:
           host: ${{secrets.SERVER_IP}}
@@ -37,10 +32,5 @@ jobs:
           key: ${{secrets.SSH_PRIVATE_KEY}}
           script: |
             cd /var/www/composes
-            # Check if COMMIT_FILE is set
-            if [ -n "$COMMIT_FILE" ]; then
-              # Copy the docker-compose file from the repository directory
-              cp $GITHUB_WORKSPACE/$COMMIT_FILE docker-compose.yml
-              # Start Docker service using the docker-compose file from the repository
-              docker-compose up -d
-            fi
+            # Substituir ou criar o arquivo docker-compose.yml com o conteúdo do commit
+            cat $GITHUB_WORKSPACE/docker-compose.yml > docker-compose.yml || cp $GITHUB_WORKSPACE/docker-compose.yml docker-compose.yml

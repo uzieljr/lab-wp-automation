@@ -1,31 +1,46 @@
-name: Deploy Último Arquivo
+name: Deploy Docker Compose
 
 on:
   push:
     branches:
-      - main  # ajuste conforme sua branch principal
+      - main  # Altere para a branch desejada
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest  # Você pode alterar o sistema operacional aqui, se necessário
 
     steps:
-      - name: Checkout código
+      - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Configurar SSH
-        uses: webfactory/ssh-agent@v0.5.3
+      - name: Detect last commit
+        id: last_commit
+        run: echo "::set-output name=commit_hash::$(git log -1 --pretty=format:'%h')"
+
+      - name: Identify Docker Compose file
+        id: docker_compose_file
+        run: |
+          FILE_CHANGED=$(git diff-tree --no-commit-id --name-only -r ${{ steps.last_commit.outputs.commit_hash }} | grep '\-docker-compose.yml' | tail -n 1)
+          echo "::set-output name=docker_compose_file::$FILE_CHANGED"
+
+      - name: Copy Docker Compose file to remote server
+        uses: appleboy/ssh-action@master
         with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            mkdir -p /var/www/composes
+            cp ${{ steps.docker_compose_file.outputs.docker_compose_file }} /var/www/composes/docker-compose.yml
 
-      - name: Identificar último arquivo commitado
-        run: |
-          LAST_FILE=$(git diff-tree --no-commit-id --name-only -r HEAD | head -n 1)
-          echo "Último arquivo commitado: $LAST_FILE"
-
-      - name: Copiar Último Arquivo para o Servidor Remoto
-        run: scp -P ${{ secrets.SSH_PORT }} $LAST_FILE ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }}:/var/www/composes/
-
-      - name: Executar docker-compose up -d no servidor remoto
-        run: |
-          ssh -p ${{ secrets.SSH_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} "cd /var/www/composes/ && docker-compose up -d"
+      - name: Docker Compose up on remote server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script: |
+            cd /var/www/composes/
+            docker-compose up -d

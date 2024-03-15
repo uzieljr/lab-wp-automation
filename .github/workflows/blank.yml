@@ -16,7 +16,7 @@ jobs:
       - name: Get latest commit
         run: |
           git pull origin main
-          COMMIT_FILE=$(git log -1 --name-only --pretty=format:'' | grep 'docker-compose.yml' | head -n 1)
+          COMMIT_FILE=$(git log --diff-filter=A --name-only --pretty=format:'' | grep 'docker-compose.yml' | head -n 1)
           echo "COMMIT_FILE=$COMMIT_FILE" >> $GITHUB_ENV
 
       - name: Install Docker Compose
@@ -33,7 +33,7 @@ jobs:
           key: ${{secrets.SSH_PRIVATE_KEY}}
           script: |
             cd /var/www/composes
-            # Copy the latest docker-compose file from the repository directory if it exists
+            # Copy the latest added docker-compose file from the repository directory if it exists
             if [ -n "$COMMIT_FILE" ]; then
               cp "$GITHUB_WORKSPACE/$COMMIT_FILE" docker-compose.yml
             else

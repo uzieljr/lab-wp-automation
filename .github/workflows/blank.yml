@@ -21,7 +21,12 @@ jobs:
         id: docker_compose_file
         run: |
           FILE_CHANGED=$(git diff-tree --no-commit-id --name-only -r ${{ steps.last_commit.outputs.commit_hash }} | grep '\-docker-compose.yml' | tail -n 1)
-          echo "::set-output name=docker_compose_file::$FILE_CHANGED"
+          if [ -n "$FILE_CHANGED" ]; then
+            echo "::set-output name=docker_compose_file::$FILE_CHANGED"
+          else
+            echo "No file matching the pattern '*-docker-compose.yml' found in the latest commit."
+            exit 1
+          fi
 
       - name: Copy Docker Compose file to remote server
         uses: appleboy/ssh-action@master
@@ -32,7 +37,7 @@ jobs:
           port: ${{ secrets.SSH_PORT }}
           script: |
             mkdir -p /var/www/composes
-            cp ${{ steps.docker_compose_file.outputs.docker_compose_file }} /var/www/composes/docker-compose.yml
+            cp "${{ steps.docker_compose_file.outputs.docker_compose_file }}" /var/www/composes/docker-compose.yml
 
       - name: Docker Compose up on remote server
         uses: appleboy/ssh-action@master
@@ -42,5 +47,5 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            cd /var/www/composes/
+            cd /var/www/composes
             docker-compose up -d

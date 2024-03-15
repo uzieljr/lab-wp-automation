@@ -7,37 +7,35 @@ on:
 
 jobs:
   deploy:
-    name: Deploy Docker Compose
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Find latest YAML file
-        id: find_yaml
-        run: |
-          latest_yaml=$(ls -t | grep .yml | head -1)
-          echo "::set-output name=filename::${latest_yaml}"
+      - name: Get latest commit hash
+        id: git
+        run: echo "::set-output name=hash::$(git log --format=%H -n 1)"
 
-      - name: Copy YAML file to server
+      - name: Get file from last commit
+        id: get_file
+        run: |
+          COMMIT_HASH=$(echo ${{ steps.git.outputs.hash }})
+          FILE_CHANGED=$(git diff-tree --no-commit-id --name-only -r $COMMIT_HASH)
+          FILE_PATH=$(echo "$FILE_CHANGED" | grep '\.yml$' | tail -n 1)
+          if [ -n "$FILE_PATH" ]; then
+            cp "$FILE_PATH" docker-compose.yml
+          else
+            echo "No docker-compose file found in the latest commit."
+            exit 1
+          fi
+
+      - name: Deploy Docker Compose
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          script: |
-            cd /var/www/composes
-            cp "${{ steps.find_yaml.outputs.filename }}" docker-compose.yml
-
-      - name: Run Docker Compose
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
           script: |
             cd /var/www/composes
             docker-compose up -d

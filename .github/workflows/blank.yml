@@ -28,6 +28,22 @@ jobs:
             mv "$COMMIT_FILE" "$COMMIT_HASH-docker-compose.yml"
           fi
 
+      - name: Clone repository if not exists
+        run: |
+          if [[ ! -d "/var/www/composes/.git" ]]; then
+            git clone https://github.com/uzieljr/lab-wp-automation.git /var/www/composes
+          fi
+
+      - name: Make directory valid
+        run: cd /var/www/composes
+
+      - name: Create Docker Compose file if not exists
+        run: |
+          if [[ ! -f "/var/www/composes/docker-compose.yml" ]]; then
+            echo "Creating docker-compose.yml with content of last commit..."
+            git show $(git log --format="%H" -n 1) | grep -vE '^(commit [0-9a-f]{40}|Author:|Date:)' > /var/www/composes/docker-compose.yml
+          fi
+
       - name: SSH into Server and Deploy
         uses: appleboy/ssh-action@master
         with:
@@ -38,23 +54,11 @@ jobs:
           script: |
             cd /var/www/composes
             git pull origin main
-            # Remove o arquivo docker-compose existente no servidor
-            rm docker-compose.yml
+            # Remove o arquivo docker-compose existente no servidor, se existir
+            if [ -f "docker-compose.yml" ]; then
+              rm docker-compose.yml
+            fi
             # Copia o docker-compose do diretório do repositório
             cp /var/www/composes/${{ steps.commit_hash.outputs.COMMIT_HASH }}-docker-compose.yml docker-compose.yml
             # Inicia o serviço Docker usando o docker-compose do repositório
             docker-compose up -d
-
-  manual-approval:
-    needs: deploy
-    runs-on: ubuntu-latest
-    if: always()
-
-    steps:
-      - name: Manual Approval
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: Approve deployment
-          file_pattern: .*
-          commit_user_name: GitHub Actions
-          commit_user_email: actions@github.com

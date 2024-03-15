@@ -18,7 +18,7 @@ services:
     image: wordpress
     restart: always
     ports:
-      - '62791:80'
+      - '65423:80'
     environment:
       WORDPRESS_DB_HOST: db
       WORDPRESS_DB_USER: mysql_user
@@ -34,6 +34,6 @@ services:
     image: adminer
     restart: always
     ports:
-      - '62792:8080'
+      - '65424:8080'
     environment:
       TZ: America/Sao_Paulo

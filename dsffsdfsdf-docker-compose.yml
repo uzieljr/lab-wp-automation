@@ -1,0 +1,39 @@
+
+version: '3.1'
+
+services:
+  db:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_DATABASE: sdfdfdf
+      MYSQL_USER: sdfsdfsdf
+      MYSQL_PASSWORD: sdfsdfdf
+      MYSQL_ROOT_PASSWORD: sdfsdfdf
+      TZ: America/Sao_Paulo
+    volumes:
+      - /var/www/wordpress/volumes/dsffsdfsdf/mysql:/var/lib/mysql
+
+  dsffsdfsdf:
+    image: wordpress
+    restart: always
+    ports:
+      - '59097:80'
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: sdfsdfsdf
+      WORDPRESS_DB_PASSWORD: sdfsdfdf
+      WORDPRESS_DB_NAME: sdfdfdf
+      TZ: America/Sao_Paulo
+    volumes:
+      - /var/www/wordpress/volumes/dsffsdfsdf/html:/var/www/html
+    depends_on:
+      - db  
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - '59098:8080'
+    environment:
+      TZ: America/Sao_Paulo

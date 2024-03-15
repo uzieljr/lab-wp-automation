@@ -37,21 +37,10 @@ jobs:
           key: ${{secrets.SSH_PRIVATE_KEY}}
           script: |
             cd /var/www/composes
-            # Copia o docker-compose do diretório do repositório
-            cp /github/workspace/$COMMIT_FILE docker-compose.yml
-            # Inicia o serviço Docker usando o docker-compose do repositório
-            docker-compose up -d
-
-  manual-approval:
-    needs: deploy
-    runs-on: ubuntu-latest
-    if: always()
-
-    steps:
-      - name: Manual Approval
-        uses: stefanzweifel/git-auto-commit-action@v4
-        with:
-          commit_message: Approve deployment
-          file_pattern: .*
-          commit_user_name: GitHub Actions
-          commit_user_email: actions@github.com
+            # Check if COMMIT_FILE is set
+            if [ -n "$COMMIT_FILE" ]; then
+              # Copy the docker-compose file from the repository directory
+              cp $GITHUB_WORKSPACE/$COMMIT_FILE docker-compose.yml
+              # Start Docker service using the docker-compose file from the repository
+              docker-compose up -d
+            fi
